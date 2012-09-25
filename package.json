@@ -1,0 +1,16 @@
+{
+  "name": "OpenWeather",
+  "subdomain": "mattnull.OpenWeather",
+  "scripts": {
+    "start": "app.js"
+  },
+  "version": "0.0.0-23",
+  "engines": {
+    "node": "0.8.x"
+  },
+  "dependencies": {
+    "getjson": "0.0.x",
+    "express": ">= 3.x",
+    "xml2js": "0.2.x"
+  }
+}
