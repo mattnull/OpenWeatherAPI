@@ -22,16 +22,17 @@ app.configure(function(){
 //start the server
 server.listen(3333);
 
-var processData = function(res){
+var processForecastData = function(res){
 	var normalizedData = {};
-	normalizedData.data = [];
 	normalizedData.forecast = {};
-	
+
 	var forecast = res.Forecast;
 	var period = forecast.period;
 
+	normalizedData.location = forecast.$;
+
 	//forecast
-	for(var i = 0; i < period.length; i++){    
+	for(var i = 0; i < period.length; i++){    2
 		var day = period[i].valid[0].split(' ')[0];
 
 		normalizedData.forecast[day] = normalizedData.forecast[day] ? normalizedData.forecast[day] : {};
@@ -43,17 +44,36 @@ var processData = function(res){
 		else{
 			normalizedData.forecast[day].temp.high = period[i].temp[0]._;
 		}
+		
+		normalizedData.forecast[day].weather = period[i].weather[0];
+		normalizedData.forecast[day].summary = period[i].text[0];
+		
+		var pop = period[i]['pop'];
+		normalizedData.forecast[day].percentChanceOfPerc = pop;
 	}
 
 	return normalizedData;
 };
 
-app.get('/', function(req, res){
-	
+app.get('/forecast', function(req, res){
+	/**
+	 lat - 40.04547 
+	 lon - -105.28385109999999
+	*/
+
+	var lat = req.param('lat') || '';
+	var lon = req.param('lon') || '';
+	var callback = req.param('callback') || '';
+
+	if(!lat || !lon){
+		res.write('{"error" : "Provide latitude and longitude."}');
+		res.end();
+	}
+
 	var options = {
 		host: 'forecast.weather.gov',
 		port: 80,
-		path: '/MapClick.php?lat=40.04547&lon=-105.28385109999999&unit=0&lg=english&FcstType=xml',
+		path: '/MapClick.php?lat='+lat+'&lon='+lon+'&unit=0&lg=english&FcstType=xml',
 		method: 'GET'
 	};
 	
@@ -63,7 +83,12 @@ app.get('/', function(req, res){
 		r.on('data', function (chunk) {
 			parser.parseString(chunk, function (err, result) {
 		        res.writeHead(200, {"Content-Type": "application/json"});
-		        res.write(JSON.stringify(processData(result)));
+		        if(callback){
+		        	res.write(callback+'('+JSON.stringify(processForecastData(result))+');');
+		        }
+		        else{
+		        	res.write(JSON.stringify(processForecastData(result)));
+		        }
 		        res.end();
 		    });
 			
@@ -72,58 +97,7 @@ app.get('/', function(req, res){
 	
 });
 
-app.get('/weather', function(req, res){	
-	var callback = req.param('callback');
-	var lat = req.param('lat') || '';
-	var lon = req.param('lon') || '';
-	var query = lat+','+lon;
-	
-
-	var almanacOptions = {
-		host: 'api.wunderground.com',
-		port: 80,
-		path: 'http://api.wunderground.com/api/16ff6f53cb5fb58f/almanac/q/'+query+'.json',
-		method: 'GET'
-	};
-
-	rest.getJSON(almanacOptions, function(status, almanac){
-		
-		var forecastOptions = {
-			host: 'api.wunderground.com',
-			port: 80,
-			path: '/api/16ff6f53cb5fb58f/forecast10day/q/'+query+'.json',
-			method: 'GET'
-		};
-
-		rest.getJSON(forecastOptions, function(status, forecast){
-			
-			res.set({
-				'Content-Type': 'application/javascript',
-			});
-
-			//process data 
-			var data = {};
-			data.forecast = [];
-			
-			var f = forecast.forecast.simpleforecast.forecastday;
-			
-			for(var i = 0; i < f.length; i++){
-				data.forecast.push({
-					high : f[i].high.fahrenheit,
-					low : f[i].low.fahrenheit,
-					perc : f[i].pop,
-					icon : f[i].icon,
-					month : f[i].date.monthname,
-					weekDay : f[i].date.weekday,
-					day : f[i].date.day
-				});
-			}
-
-			data.almanac = almanac.almanac;
-			res.send(callback+'('+JSON.stringify(data)+');');
-		});
-	});
+app.get('/current', function(req, res){
 
 });
-
 console.log("Express server listening on port " + 3333);
