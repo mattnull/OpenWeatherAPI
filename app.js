@@ -7,7 +7,6 @@ var express = require('express');
 var app = express()
   , http = require('http')
   , server = http.createServer(app)
-  , fs = require('fs')
   , xml2js = require('xml2js');	
 
 
@@ -22,7 +21,18 @@ app.configure(function(){
 //start the server
 server.listen(3333);
 
+var weatherMap = {
+	'Mostly Cloudy' : 'cloud',
+	'Chance Thunderstorm' : 'chancetstorms',
+	'Slight Chc Thunderstorms' : 'chancetstorms',
+	'Chance Showers' : 'rain',
+	'Slight Chc Showers' : 'chancerain',
+	'Partly Cloudy' : 'partlycloudy',
+	'Mostly Sunny' : 'sun'
+};
+
 var processForecastData = function(res){
+
 	var normalizedData = {};
 	normalizedData.forecast = {};
 
@@ -49,7 +59,8 @@ var processForecastData = function(res){
 		normalizedData.forecast[day].summary = period[i].text[0];
 		
 		var pop = period[i]['pop'];
-		normalizedData.forecast[day].percentChanceOfPerc = pop;
+		normalizedData.forecast[day].percentChanceOfPrecipitation = pop;
+		normalizedData.forecast[day].icon = weatherMap[period[i].weather[0]];
 	}
 
 	return normalizedData;
