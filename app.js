@@ -1,5 +1,5 @@
 /**
- * SimpleCast API JSONP Proxy 2012
+ * OpenWeather API 2012
  * @author Matt Null
  */
 
